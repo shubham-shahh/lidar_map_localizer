@@ -111,7 +111,7 @@ private:
   }
 
   void cloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-    // ROS→PCL
+    // ROS to PCL
     pcl::PointCloud<PointT>::Ptr raw_scan(new pcl::PointCloud<PointT>);
     pcl::fromROSMsg(*msg, *raw_scan);
 
