@@ -41,5 +41,33 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+add_executable(submap_kiss_icp_ndt src/submap_kiss_icp_ndt.cpp)
+ament_target_dependencies(submap_kiss_icp_ndt
+  rclcpp sensor_msgs nav_msgs pcl_conversions
+)
+target_link_libraries(submap_kiss_icp_ndt
+  ${PCL_LIBRARIES}
+)
+install(TARGETS submap_kiss_icp_ndt
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+
+add_executable(submap_kiss_icp_small_gicp src/submap_kiss_icp_small_gicp.cpp)
+
+ament_target_dependencies(submap_kiss_icp_small_gicp
+  rclcpp sensor_msgs nav_msgs pcl_conversions pcl_ros small_gicp
+)
+
+target_link_libraries(submap_kiss_icp_small_gicp
+  ${PCL_LIBRARIES}
+  small_gicp::small_gicp
+)
+
+install(TARGETS submap_kiss_icp_small_gicp
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+
 
 ament_package()
