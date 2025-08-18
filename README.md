@@ -87,9 +87,19 @@ Here's the simulation result demonstrating robust transaltion and rotation accur
 ### Real World Tests
 I tested the setup in real world on 2 Cameras, **Zed 2i** and **realsense D456**, Both camearas have different properties, point cloud accuracies which are tied to thier baseline and other camera properties. TO get the 3D designs and real world datasets contact me on shubhams@udel.edu because of the size of the datasets and storage limitations I am figuring how can  I share it but meanwhile if someone wants to give it a try, shoot me a email, I will be more than happy to share the designs and datsets
 
-<div style="display: flex; justify-content: space-between;">
-  <img src="https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/hand_held_front.jpg" alt="Image 1" style="width: 48%;">
-  <img src="https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/hand_held_side.jpg" alt="Image 2" style="width: 48%;">
+<div align="center">
+<table>
+<tr>
+<td align="center" width="50%">
+<img src="https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/hand_held_front.jpg" alt="Front View" style="width: 100%; height: 400px; object-fit: cover;">
+<br><b>Front View</b>
+</td>
+<td align="center" width="50%">
+<img src="https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/hand_held_side.jpg" alt="Side View" style="width: 100%; height: 400px; object-fit: cover;">
+<br><b>Side View</b>
+</td>
+</tr>
+</table>
 </div>
 
 
