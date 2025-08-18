@@ -80,7 +80,7 @@ Based on the learings from benchnarkings and above trials, and to keep the appra
 ### Simulation Result
 Here's the simulation result demonstrating robust transaltion and rotation accuracy in empty/ featureless spots
 
-![Simulation Video](https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/sim_results.giff)
+![Simulation Video](https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/sim_results.gif)
 
 
 
