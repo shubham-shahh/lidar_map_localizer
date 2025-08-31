@@ -1,5 +1,3 @@
-# map_odom_corrector.launch.py
-
 import os
 
 from launch import LaunchDescription

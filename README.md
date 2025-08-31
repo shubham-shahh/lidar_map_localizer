@@ -128,6 +128,8 @@ To run this package there are a few dependencies
 
 ## Build and Run the Package
 
+prereq: Build and install [small_gicp](https://github.com/koide3/small_gicp) and [kiss_icp](https://github.com/PRBonn/kiss-icp)
+
 1. Build the package
 ```bash
 
@@ -148,26 +150,31 @@ ros2 launch ardupilot_gz_bringup iris_maze.launch.py rviz:=true use_gz_tf:=true 
 cd scripts/
 python3 teleop_control_node.py 
 
-
-
 ```
 
 4. Build the map
-Move across the map using the teleop node and record the rosbag and process it using KISS_SLAM add the path of generated map to `small_gicp_loclaization_launch.py` file, there is maze map in smaple_maps folder in case you want to skip map building
+Move across the map using the teleop node and record the rosbag and process it using KISS_SLAM. There are some maps in smaple_maps folder in case you want to skip map building
 ```bash
 
 ros2 bag record -o scan_bag /cloud_in
 
-
 ```
 
 
+5. Run the localization node for high rate odom (you can use RTAB map/ KISS_ICP depending on your setup)
 
-5. Run the localization node
+Note: Kiss_icp might not run on sparse maps directly. Modify [this line](https://github.com/PRBonn/kiss-icp/blob/8a5597bca71daaa6fe4fd02bf7ffef13578a3c92/cpp/kiss_icp/pipeline/KissICP.cpp#L74) to ` return {frame_downsample, frame_downsample};`
 
 ```bash
 
-ros2 launch lidar_map_localizer localization_launch.py
+ros2 launch kiss_icp odometry.launch.py topic:=/cloud_i
 
 ```
-The above node publishes odometry on /generate_pose topic
+
+5. Run the lidar_map_localizer node 
+
+```bash
+
+ros2 launch lidar_map_localizer ndt_gicp_localization_launch.py
+
+```
