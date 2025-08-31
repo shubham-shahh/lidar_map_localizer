@@ -16,7 +16,7 @@ def generate_launch_description():
     # Path to the global PCD map
     ld.add_action(DeclareLaunchArgument(
         'map_file',
-        default_value='/home/shubham/ardu_ws/src/lidar_map_localizer/sample_maps/iris_warehouse_map.pcd',
+        default_value='sample_maps/iris_warehouse_map.pcd',
         description='Full path to the global PCD file'))
 
     # Voxel‐grid leaf sizes for downsampling
