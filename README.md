@@ -1,16 +1,16 @@
 
-# GSoC’ 25 Non-GPS Position Estimation Using 3D Camera and Pre-Generated Map - Final
-![GSoC’ 25](https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/cover_image.png)
+# GSoC '25 Non-GPS Position Estimation Using 3D Camera and Pre-Generated Map - Final
+![GSoC '25](https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/cover_image.png)
 
 Hello Ardupilot family!
 
 I’ve been working on [GSoC’ 25 Non-GPS Position Estimation Using 3D Camera and Pre-Generated Map - Part 1](https://discuss.ardupilot.org/t/gsoc-25-non-gps-position-estimation-using-3d-camera-and-pre-generated-map-part-1/134712)
- this summer, and I’m excited to share that it’s been a fun, challenging project—one that enables accurate onboard localization by leveraging a pre-generated map. Below I walk through the full journey: setup steps, datasets, hardware, future work, and more. Buckle up!
+ this summer, and I’m excited to share that it’s been a fun, challenging project—one that enables accurate onboard localization by leveraging a pre-generated map. Below, I walk through the full journey: setup steps, datasets, hardware, future work, and more. Buckle up!
 
 ## The Journey
 I will go through all the things I worked on while working on this problem statement in as much detail as possible to make sure people can extend this work and build some cool applications on top of it
 
-I’ll cover everything I built and tested while tackling this problem statement, in as much detail as possible enabling others to extend it and build new applications on top.
+I’ll cover everything I built and tested while tackling this problem statement, in as much detail as possible, enabling others to extend it and build new applications on top.
 
 ### Simulation
 
@@ -18,12 +18,12 @@ I’ll cover everything I built and tested while tackling this problem statement
 
 I began in simulation. Before attempting limited-FOV 3D-camera–to-map matching, I first tackled 3D LiDAR scan-to-map and incrementally raised the difficulty. The maze world’s repetitive geometry was challenging, so I transitioned to an industrial-warehouse environment to uncover the issues most relevant to real deployments.
 
-To create 3D maps in simulation I used [KISS-SLAM](https://github.com/PRBonn/kiss-slam). The main reason: it works out of the box without heavy setup for calibrations, extrinsics, or other details.
+To create 3D maps in simulation, I used [KISS-SLAM](https://github.com/PRBonn/kiss-slam). The main reason: it works out of the box without heavy setup for calibrations, extrinsics, or other details.
 
 To match LiDAR scans to the 3D LiDAR map, I surveyed existing frameworks rather than reinventing the wheel. Here are several solid approaches I explored:
 
-1) [lidar_localization_ros2](https://github.com/rsasaki0109/lidar_localization_ros2)
-2) [icp_localization](https://github.com/leggedrobotics/icp_localization)
+1) [icp_localization](https://github.com/leggedrobotics/icp_localization)
+2) [lidar_localization_ros2](https://github.com/rsasaki0109/lidar_localization_ros2)
 3) [KISS-Matcher](https://github.com/MIT-SPARK/KISS-Matcher)
 4) [hdl_localization](https://github.com/koide3/hdl_localization?tab=readme-ov-file)
 5) [GLIM](https://github.com/koide3/glim)
@@ -45,7 +45,7 @@ To keep things concise and on-topic, I’ll highlight the most important observa
 | GLIL                   |   N/A    | N/A   |
 | FAST_LIO_LOCALIZATION  |   39.2   | Easy  |
 
-All the tested algorithms have their own set of tuning parameters, and some of the above-mentioned approaches do not perform relocalization without adding additional components (like KISS-Matcher and GLIM), so the results might vary based on parameter tuning, setup, and compute resources. please Contact [shubhams@udel.edu](shubhams@udel.edu) to get a detailed parameter list and tuning parameters for specific approaches. If I am missing any approach, please add it in the comments, I will be more than happy to test it and add the results.
+All the tested algorithms have their own set of tuning parameters, and some of the above-mentioned approaches do not perform relocalization without adding additional components (like KISS-Matcher and GLIM), so the results might vary based on parameter tuning, setup, and compute resources. please contact [shubhams@udel.edu](shubhams@udel.edu) to get a detailed parameter list and tuning parameters for specific approaches. If I am missing any approach, please add it in the comments, I will be more than happy to test it and add the results.
 
 After deriving the results on full-size scan-to-map matching, I increased the difficulty by a notch and decreased the horizontal and vertical FOV to match common depth cameras like ZED and RealSense. That's where all the above approaches start falling apart, since the amount of overlap needed to derive a meaningful and robust pose estimate becomes much harder.
 
@@ -58,7 +58,7 @@ That's when I started building our own matcher based on simple foundations and l
 #### Approaches Tried:
 
 1) **NDT based scan to map matching**: Using just NDT to match the current scan to the global map 
-    - Works well with a good initital estimate 
+    - Works well with a good initial estimate 
     - Requires a good amount of overlap between the source and target scan
     - Rotational accuracy is poor
     - Gets lost easily in corridor/maze/long walls kind of environment
@@ -81,7 +81,7 @@ Based on the learnings from benchmarking and above trials, and to keep the appro
 
 
 ### Simulation Result
-Here's the simulation result demonstrating robust transaltion and rotation accuracy even in empty/ featureless spots
+Here's the simulation result demonstrating robust translation and rotation accuracy even in empty/ featureless spots
 
 ![Simulation Video](https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/sim_results.gif)
 
@@ -109,13 +109,14 @@ I have tilted the camera slightly for this handheld setup to avoid capturing mov
 
 ![Real world data Video](https://github.com/shubham-shahh/lidar_map_localizer/blob/v_0_3_Aug_2025/assets/real_world_data.gif)
 
-## Currect challanges and Future work
+## Current Challanges and Future Work
 
 1) Exploring learning-based matching techniques for robust translational and rotational accuracies, like[BUFFER_X](https://github.com/MIT-SPARK/BUFFER-X)
 2) Adding an additional landmark detection module to provide a robust error-flushing mechanism
 3) Better memory management to work with large scale maps
 4) Improve the perforance of the system to improve the frame rate
 5) Building a framework to maintain accurate and extremely sparse yet informative submaps to ensure overlap is not an issue for calculating accurate odometry
+6) Add Aruco Based initialization to support init from anywhere
 
 
 ## Installation
