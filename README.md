@@ -71,25 +71,15 @@ To match LiDAR scans to the 3D LiDAR map, I surveyed existing frameworks rather 
 To keep things concise and on-topic, I’ll highlight the most important observations. I implemented each approach in simulation to understand behavior and rough benchmarks before choosing a direction to build on. Every approach has its own strengths, weaknesses, requirements, and environment constraints. Instead of reporting ATE/RTE in sim, I queried % error over a ~500 m trajectory to keep things simple. None of the approaches were rock solid end-to-end; each failed at least once and drifted during challenging scenarios (empty corridors, low geometric features, etc.).
 
 
-
 | Algorithm              | % error  | Setup |
-
 | :----------------------| :------: | ----: |
-
 | lidar_localization_ros2|   12.4   | Easy  |
-
 | icp_localization       |   25.3   | Medium|
-
 | KISS-Matcher           |   37.2   | Hard  |
-
 | hdl_localization       |   22.4   | Hard  |
-
 | GLIM                   |   15.3   | Hard  |
-
 | GLIL                   |   N/A    | N/A   |
-
 | FAST_LIO_LOCALIZATION  |   39.2   | Easy  |
-
 
 
 All the tested algorithms have their own set of tuning parameters, and some of the above-mentioned approaches do not perform relocalization without adding additional components (like KISS-Matcher and GLIM), so the results might vary based on parameter tuning, setup, and compute resources. Please contact [shubhams@udel.edu](shubhams@udel.edu) to get a detailed parameter list and tuning parameters for specific approaches. If I am missing any approach, please add it in the comments. I will be more than happy to test it and add the results.
