@@ -68,6 +68,21 @@ install(TARGETS submap_kiss_icp_small_gicp
   DESTINATION lib/${PROJECT_NAME}
 )
 
+add_executable(ndt_gicp_localization src/ndt_gicp_localization.cpp)
+
+ament_target_dependencies(ndt_gicp_localization
+  rclcpp sensor_msgs nav_msgs pcl_conversions pcl_ros small_gicp
+)
+
+target_link_libraries(ndt_gicp_localization
+  ${PCL_LIBRARIES}
+  small_gicp::small_gicp
+)
+
+install(TARGETS ndt_gicp_localization
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 
 
 ament_package()
