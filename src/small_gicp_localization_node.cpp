@@ -24,7 +24,6 @@
 using namespace std::placeholders;
 using PointT = pcl::PointXYZ;
 
-// small_gicp shorthands
 using SGPointCloud = small_gicp::PointCloud;
 using KdTree       = small_gicp::KdTree<SGPointCloud>;
 using Registration = small_gicp::Registration<
@@ -37,7 +36,8 @@ public:
   MapLocalizer(const rclcpp::NodeOptions &opts)
   : Node("map_localizer", opts),
     last_pose_(Eigen::Isometry3d::Identity()),
-    imu_q_(Eigen::Quaterniond::Identity())
+    imu_q_(Eigen::Quaterniond::Identity()),
+    imu_received_(false)
   {
     // ---- parameters ----
     declare_parameter<std::string>("map_file", "");
@@ -59,16 +59,13 @@ public:
       rclcpp::shutdown();
       return;
     }
-    //RCLCPP_INFO(get_logger(), "Loaded map (%zu points)", raw_map->size());
 
     pcl::PointCloud<PointT>::Ptr ds_map(new pcl::PointCloud<PointT>);
     pcl::VoxelGrid<PointT> vg_map;
     vg_map.setInputCloud(raw_map);
     vg_map.setLeafSize(voxel_size_, voxel_size_, voxel_size_);
     vg_map.filter(*ds_map);
-    RCLCPP_INFO(get_logger(), "Downsampled map → %zu points", ds_map->size());
 
-    // convert to small_gicp cloud
     std::vector<Eigen::Vector3d> map_pts;
     map_pts.reserve(ds_map->size());
     for (auto &p : ds_map->points) {
@@ -76,13 +73,11 @@ public:
     }
     target_ = std::make_shared<SGPointCloud>(map_pts);
 
-    // build tree & covariances
     target_tree_ = std::make_shared<KdTree>(
       target_, small_gicp::KdTreeBuilderOMP(num_threads_));
     small_gicp::estimate_covariances_omp(
       *target_, *target_tree_, corr_randomness_, num_threads_);
 
-    // configure GICP
     registration_.reduction.num_threads = num_threads_;
     registration_.rejector.max_dist_sq  = max_corr_dist_ * max_corr_dist_;
 
@@ -97,100 +92,103 @@ public:
 
     pub_ = create_publisher<nav_msgs::msg::Odometry>("generate_pose", 10);
 
-    RCLCPP_INFO(get_logger(), "MapLocalizer ready. Fusing IMU orientation into GICP.");
+    RCLCPP_INFO(get_logger(), "MapLocalizer initialized");
   }
 
 private:
-  void imuCallback(const sensor_msgs::msg::Imu::SharedPtr imu_msg) {
-    // update the latest orientation from IMU
-    imu_q_.w() = imu_msg->orientation.w;
-    imu_q_.x() = imu_msg->orientation.x;
-    imu_q_.y() = imu_msg->orientation.y;
-    imu_q_.z() = imu_msg->orientation.z;
+  void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+    imu_q_.w() = msg->orientation.w;
+    imu_q_.x() = msg->orientation.x;
+    imu_q_.y() = msg->orientation.y;
+    imu_q_.z() = msg->orientation.z;
     imu_q_.normalize();
+    imu_received_ = true;
   }
 
   void cloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
-    // ROS to PCL
+    if (!imu_received_) {
+      RCLCPP_WARN_THROTTLE(
+        get_logger(), *get_clock(), 2000,
+        "Waiting for IMU data before localization");
+      return;
+    }
+
     pcl::PointCloud<PointT>::Ptr raw_scan(new pcl::PointCloud<PointT>);
     pcl::fromROSMsg(*msg, *raw_scan);
 
-    // downsample scan
     pcl::PointCloud<PointT>::Ptr ds_scan(new pcl::PointCloud<PointT>);
     pcl::VoxelGrid<PointT> vg_scan;
     vg_scan.setInputCloud(raw_scan);
     vg_scan.setLeafSize(voxel_size_, voxel_size_, voxel_size_);
     vg_scan.filter(*ds_scan);
 
-    RCLCPP_INFO(get_logger(),
-                "Map pts: %zu, Scan pts: %zu",
-                target_->size(), ds_scan->size());
     if (ds_scan->empty()) {
-      RCLCPP_WARN(get_logger(), "Empty downsampled scan, skipping");
       return;
     }
 
-    // convert scan to small_gicp cloud + covariances
     std::vector<Eigen::Vector3d> scan_pts;
     scan_pts.reserve(ds_scan->size());
     for (auto &p : ds_scan->points) {
       scan_pts.emplace_back(p.x, p.y, p.z);
     }
+
     auto source = std::make_shared<SGPointCloud>(scan_pts);
     auto source_tree = std::make_shared<KdTree>(
       source, small_gicp::KdTreeBuilderOMP(num_threads_));
     small_gicp::estimate_covariances_omp(
       *source, *source_tree, corr_randomness_, num_threads_);
 
-    // build initial guess: keep last translation, but orientation from IMU
     Eigen::Isometry3d init_guess = last_pose_;
     init_guess.linear() = imu_q_.toRotationMatrix();
 
-    // align
     auto result = registration_.align(
       *target_, *source, *target_tree_, init_guess);
 
-    // update last_pose_ and extract 4×4
+    if (!result.converged) {
+      RCLCPP_WARN(get_logger(), "GICP did not converge, skipping update");
+      return;
+    }
+
     last_pose_ = result.T_target_source;
     Eigen::Matrix4d tf = last_pose_.matrix();
 
-    // publish Odometry
     nav_msgs::msg::Odometry odom;
-    odom.header         = msg->header;
+    odom.header = msg->header;
     odom.child_frame_id = "base_link";
     odom.pose.pose.position.x = tf(0,3);
     odom.pose.pose.position.y = tf(1,3);
     odom.pose.pose.position.z = tf(2,3);
+
     Eigen::Quaterniond q(last_pose_.rotation());
     odom.pose.pose.orientation.x = q.x();
     odom.pose.pose.orientation.y = q.y();
     odom.pose.pose.orientation.z = q.z();
     odom.pose.pose.orientation.w = q.w();
-    pub_->publish(odom);
 
-    //RCLCPP_INFO_STREAM(get_logger(), "T =\n" << tf);
+    pub_->publish(odom);
   }
 
   // parameters
   std::string map_file_;
-  double      voxel_size_;
-  int         num_threads_;
-  double      max_corr_dist_;
-  int         corr_randomness_;
+  double voxel_size_;
+  int num_threads_;
+  double max_corr_dist_;
+  int corr_randomness_;
 
-  // small_gicp data
+  // GICP data
   std::shared_ptr<SGPointCloud> target_;
-  std::shared_ptr<KdTree>       target_tree_;
-  Registration                  registration_;
-  Eigen::Isometry3d             last_pose_;
+  std::shared_ptr<KdTree> target_tree_;
+  Registration registration_;
+  Eigen::Isometry3d last_pose_;
 
-  // IMU orientation
-  Eigen::Quaterniond            imu_q_;
+  // IMU
+  Eigen::Quaterniond imu_q_;
+  bool imu_received_;
 
   // ROS
-  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr           imu_sub_;
-  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr   sub_;
-  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr            pub_;
+  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_;
+  rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_;
 };
 
 int main(int argc, char** argv) {
